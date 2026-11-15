@@ -34,8 +34,7 @@ class NativeServiceProvider extends ServiceProvider
     public function plugins(): array
     {
         return [
-            \Native\Mobile\UI\NativeUIServiceProvider::class,
-        
+            // Add custom NativePHP plugins here
         ];
     }
 }
