@@ -14,7 +14,7 @@
                 SS
             </div>
             <h1 class="text-2xl font-black text-slate-900 tracking-tight">Society<span class="text-teal-600">Setu</span></h1>
-            <p class="text-xs text-slate-500 font-medium">Resident &amp; Managing Committee App</p>
+            <p class="text-xs text-slate-500 font-medium">Resident, Owner &amp; Committee App</p>
         </div>
 
         <div class="card p-6 bg-white shadow-md">
@@ -53,13 +53,13 @@
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                            4-Digit PIN / OTP <span class="text-red-500">*</span>
+                            Password / PIN <span class="text-red-500">*</span>
                         </label>
-                        <span class="text-[10px] text-teal-600 font-semibold">(Mock OTP: 1234)</span>
+                        <span class="text-[10px] text-teal-600 font-semibold">(Default: password or 1234)</span>
                     </div>
-                    <input type="password" id="pin" name="pin" value="1234" required minlength="4" maxlength="6"
-                           placeholder="Enter 4-digit PIN"
-                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm font-mono tracking-widest text-center text-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    <input type="password" id="password" name="password" value="password" required
+                           placeholder="Enter your password"
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
                 </div>
 
                 <button type="submit" class="btn-primary w-full py-2.5 text-sm font-semibold shadow-sm mt-2">
@@ -67,43 +67,37 @@
                 </button>
             </form>
 
-            <!-- One-Click Demo Role Fillers for prototype testing -->
+            <!-- Quick prototype buttons -->
             <div class="mt-6 pt-5 border-t border-slate-100">
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block text-center mb-2">
-                    Quick One-Click Prototype Logins
+                    Quick Test Accounts
                 </span>
                 <div class="grid grid-cols-3 gap-1.5 text-center">
-                    <button type="button" onclick="fillLogin('KOHINOOR01', '9820011223', '1234')"
+                    <button type="button" onclick="fillLogin('KOHINOOR01', '9820011223', 'password')"
                             class="p-2 rounded border border-teal-200 bg-teal-50/70 hover:bg-teal-100 text-teal-900 transition text-xs">
                         <span class="font-bold block text-[11px]">Committee</span>
                         <span class="text-[9px] text-slate-500">Rajesh S.</span>
                     </button>
-                    <button type="button" onclick="fillLogin('KOHINOOR01', '9820077889', '1234')"
+                    <button type="button" onclick="fillLogin('KOHINOOR01', '9820077889', 'password')"
                             class="p-2 rounded border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-blue-900 transition text-xs">
                         <span class="font-bold block text-[11px]">Owner</span>
                         <span class="text-[9px] text-slate-500">Amit D.</span>
                     </button>
-                    <button type="button" onclick="fillLogin('KOHINOOR01', '9820099001', '1234')"
+                    <button type="button" onclick="fillLogin('KOHINOOR01', '9820099001', 'password')"
                             class="p-2 rounded border border-amber-200 bg-amber-50/70 hover:bg-amber-100 text-amber-900 transition text-xs">
                         <span class="font-bold block text-[11px]">Tenant</span>
                         <span class="text-[9px] text-slate-500">Vikram M.</span>
                     </button>
                 </div>
             </div>
-
-            <div class="mt-4 text-center">
-                <a href="{{ route('home') }}" class="text-xs text-slate-500 hover:text-slate-800">
-                    &larr; Back to Platform Home
-                </a>
-            </div>
         </div>
     </div>
 
     <script>
-        function fillLogin(code, mob, pin) {
+        function fillLogin(code, mob, pwd) {
             document.getElementById('society_code').value = code;
             document.getElementById('mobile').value = mob;
-            document.getElementById('pin').value = pin;
+            document.getElementById('password').value = pwd;
             document.getElementById('loginForm').submit();
         }
     </script>

@@ -50,8 +50,10 @@ class DatabaseSeeder extends Seeder
             ['email' => 'admin@societysetu.com'],
             [
                 'name' => 'Super Administrator',
+                'user_name' => '9999999999#SUPERADMIN',
                 'mobile' => '9999999999',
                 'password' => Hash::make('password'),
+                'pin' => Hash::make('1234'),
                 'is_super_admin' => true,
             ]
         );
@@ -116,12 +118,15 @@ class DatabaseSeeder extends Seeder
             ['mobile' => '9820011223'],
             [
                 'name' => 'Rajesh Sharma',
+                'user_name' => '9820011223#KOHINOOR01',
                 'email' => 'rajesh.sharma@example.com',
                 'password' => Hash::make('password'),
                 'pin' => Hash::make('1234'),
                 'is_super_admin' => false,
             ]
         );
+        $userRajesh->user_name = '9820011223#KOHINOOR01';
+        $userRajesh->save();
         $userRajesh->assignRole([$roleCommittee, $roleOwner]);
 
         // Memberships for Rajesh (holds committee_member AND house_owner)
@@ -160,12 +165,15 @@ class DatabaseSeeder extends Seeder
             ['mobile' => '9820077889'],
             [
                 'name' => 'Amit Deshmukh',
+                'user_name' => '9820077889#KOHINOOR01',
                 'email' => 'amit.deshmukh@example.com',
                 'password' => Hash::make('password'),
                 'pin' => Hash::make('1234'),
                 'is_super_admin' => false,
             ]
         );
+        $userAmit->user_name = '9820077889#KOHINOOR01';
+        $userAmit->save();
         $userAmit->assignRole($roleOwner);
 
         SocietyMember::firstOrCreate([
@@ -197,12 +205,15 @@ class DatabaseSeeder extends Seeder
             ['mobile' => '9820099001'],
             [
                 'name' => 'Vikram Malhotra',
+                'user_name' => '9820099001#KOHINOOR01',
                 'email' => 'vikram.m@example.com',
                 'password' => Hash::make('password'),
                 'pin' => Hash::make('1234'),
                 'is_super_admin' => false,
             ]
         );
+        $userVikram->user_name = '9820099001#KOHINOOR01';
+        $userVikram->save();
         $userVikram->assignRole($roleTenant);
 
         SocietyMember::firstOrCreate([
@@ -223,7 +234,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 7. Newsletters
-        // General notice for both
         $newsletterBoth = Newsletter::firstOrCreate(
             ['society_id' => $society1->id, 'title' => 'Annual General Meeting & Cultural Evening'],
             [
@@ -235,7 +245,6 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Owners-only notice
         $newsletterOwners = Newsletter::firstOrCreate(
             ['society_id' => $society1->id, 'title' => 'Building Sinking Fund & Lift Modernization Resolution'],
             [
@@ -247,7 +256,6 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Tenants-only notice
         $newsletterTenants = Newsletter::firstOrCreate(
             ['society_id' => $society1->id, 'title' => 'Tenant Police Verification & Move-in Guidelines'],
             [
@@ -259,7 +267,6 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Auto-populate newsletter recipients
         foreach ([$newsletterBoth, $newsletterOwners, $newsletterTenants] as $nl) {
             $eligibleUsers = collect();
             if ($nl->target_audience === 'both') {
@@ -284,7 +291,6 @@ class DatabaseSeeder extends Seeder
         $waterCategory = ComplaintCategory::where('name', 'Water')->first();
         $maintenanceCategory = ComplaintCategory::where('name', 'Maintenance')->first();
 
-        // Complaint by Tenant Vikram
         $comp1 = Complaint::firstOrCreate(
             ['society_id' => $society1->id, 'title' => 'Low water pressure in kitchen faucet'],
             [
@@ -305,7 +311,6 @@ class DatabaseSeeder extends Seeder
             'status_changed_to' => 'In Progress',
         ]);
 
-        // Complaint by Owner Amit
         $comp2 = Complaint::firstOrCreate(
             ['society_id' => $society1->id, 'title' => 'Corridor sensor light flickering on 3rd floor'],
             [

@@ -13,7 +13,10 @@ class CommitteeComplaintController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Complaint::with(['property', 'submitter', 'category']);
+        $societyId = session('current_society_id');
+
+        $query = Complaint::where('society_id', $societyId)
+            ->with(['property', 'submitter', 'category']);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);

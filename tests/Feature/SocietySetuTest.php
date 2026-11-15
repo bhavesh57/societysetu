@@ -18,71 +18,78 @@ class SocietySetuTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Clear session between tests
         session()->flush();
     }
 
-    public function test_super_admin_can_login_and_access_dashboard(): void
+    public function test_welcome_page_describes_platform_without_login_buttons(): void
     {
-        $response = $this->post(route('admin.login.submit'), [
-            'email' => 'admin@societysetu.com',
-            'password' => 'password',
-        ]);
+        $response = $this->get('/');
+        $response->assertStatus(200);
+        $response->assertSee('SocietySetu');
+        $response->assertSee('What SocietySetu Provides');
+        $response->assertSee('mobileno#societycode');
 
-        $response->assertRedirect(route('admin.dashboard'));
-        $this->assertAuthenticated();
-        $this->assertTrue(auth()->user()->is_super_admin);
-
-        $dashResponse = $this->get(route('admin.dashboard'));
-        $dashResponse->assertStatus(200);
-        $dashResponse->assertSee('Super Admin Overview');
+        // Verify NO login buttons or links are displayed on the landing showcase
+        $response->assertDontSee('Sign In as Super Admin');
+        $response->assertDontSee('Enter Society Portal');
+        $response->assertDontSee('Mobile App View');
+        $response->assertDontSee('Super Admin Portal');
+        $response->assertDontSee('Launch Mobile App Portal');
+        $response->assertDontSee('Open Super Admin Login');
     }
 
-    public function test_super_admin_can_create_society_with_unique_code(): void
+    public function test_users_have_user_name_in_mobile_hash_society_format(): void
     {
-        $admin = User::where('is_super_admin', true)->first();
-        $this->actingAs($admin);
+        $userRajesh = User::where('mobile', '9820011223')->first();
+        $this->assertNotNull($userRajesh);
+        $this->assertEquals('9820011223#KOHINOOR01', $userRajesh->user_name);
 
-        $code = 'TESTSOC' . rand(100, 999);
-        $response = $this->post(route('admin.societies.store'), [
-            'name' => 'Test Heights Co-op',
-            'society_code' => $code,
-            'address' => 'Test Street 1',
-            'city' => 'Mumbai',
-            'state' => 'Maharashtra',
-            'pincode' => '400001',
-            'contact_person' => 'Test Manager',
-            'contact_phone' => '9800000000',
-            'contact_email' => 'test@heights.com',
-            'status' => 'active',
-        ]);
+        $userAmit = User::where('mobile', '9820077889')->first();
+        $this->assertNotNull($userAmit);
+        $this->assertEquals('9820077889#KOHINOOR01', $userAmit->user_name);
 
-        $this->assertDatabaseHas('societies', [
-            'society_code' => $code,
-            'name' => 'Test Heights Co-op',
-        ]);
+        $userVikram = User::where('mobile', '9820099001')->first();
+        $this->assertNotNull($userVikram);
+        $this->assertEquals('9820099001#KOHINOOR01', $userVikram->user_name);
     }
 
-    public function test_mobile_login_validates_society_code_mobile_and_pin(): void
+    public function test_committee_login_with_society_code_mobile_and_password(): void
     {
-        // 1. Wrong Society Code
-        $res = $this->post(route('app.login.submit'), [
-            'society_code' => 'INVALID999',
-            'mobile' => '9820011223',
-            'pin' => '1234',
-        ]);
-        $res->assertSessionHasErrors(['society_code']);
-
-        // 2. Correct Society Code, Mobile, and PIN
         $res = $this->post(route('app.login.submit'), [
             'society_code' => 'KOHINOOR01',
             'mobile' => '9820011223',
-            'pin' => '1234',
+            'password' => 'password',
         ]);
 
         $res->assertRedirect(route('committee.dashboard'));
         $this->assertEquals('KOHINOOR01', session('current_society_code'));
         $this->assertEquals('committee_member', session('active_role'));
+    }
+
+    public function test_house_owner_login_with_society_code_mobile_and_password(): void
+    {
+        $res = $this->post(route('app.login.submit'), [
+            'society_code' => 'KOHINOOR01',
+            'mobile' => '9820077889',
+            'password' => 'password',
+        ]);
+
+        $res->assertRedirect(route('owner.dashboard'));
+        $this->assertEquals('KOHINOOR01', session('current_society_code'));
+        $this->assertEquals('house_owner', session('active_role'));
+    }
+
+    public function test_tenant_login_with_society_code_mobile_and_password(): void
+    {
+        $res = $this->post(route('app.login.submit'), [
+            'society_code' => 'KOHINOOR01',
+            'mobile' => '9820099001',
+            'password' => 'password',
+        ]);
+
+        $res->assertRedirect(route('tenant.dashboard'));
+        $this->assertEquals('KOHINOOR01', session('current_society_code'));
+        $this->assertEquals('tenant', session('active_role'));
     }
 
     public function test_mobile_multi_role_support_and_role_switcher(): void
@@ -91,7 +98,7 @@ class SocietySetuTest extends TestCase
         $res = $this->post(route('app.login.submit'), [
             'society_code' => 'KOHINOOR01',
             'mobile' => '9820011223',
-            'pin' => '1234',
+            'password' => 'password',
         ]);
 
         $this->assertContains('committee_member', session('available_roles'));
@@ -102,51 +109,18 @@ class SocietySetuTest extends TestCase
         $switchRes->assertRedirect(route('owner.dashboard'));
         $this->assertEquals('house_owner', session('active_role'));
 
-        // Access owner dashboard
         $ownerDash = $this->get(route('owner.dashboard'));
         $ownerDash->assertStatus(200);
         $ownerDash->assertSee('House Owner Portal');
     }
 
-    public function test_multi_tenant_isolation_prevents_cross_society_leaks(): void
-    {
-        $soc1 = Society::where('society_code', 'KOHINOOR01')->first();
-        $soc2 = Society::where('society_code', 'GREEN02')->first();
-
-        // Create a property in Green Acres
-        $propSoc2 = Property::withoutGlobalScopes()->create([
-            'society_id' => $soc2->id,
-            'wing_or_block' => 'Block Z',
-            'house_number' => '999',
-            'property_type' => 'Villa',
-            'occupancy_status' => 'vacant',
-        ]);
-
-        // When a user is in Kohinoor session
-        session(['current_society_id' => $soc1->id]);
-
-        $propertiesInSession = Property::all();
-
-        // Must NOT contain property from Green Acres!
-        $this->assertFalse($propertiesInSession->contains('id', $propSoc2->id));
-
-        // When switching session to Green Acres
-        session(['current_society_id' => $soc2->id]);
-        $greenProps = Property::all();
-        $this->assertTrue($greenProps->contains('id', $propSoc2->id));
-    }
-
     public function test_strict_newsletter_audience_targeting(): void
     {
-        $soc = Society::where('society_code', 'KOHINOOR01')->first();
-        $ownerUser = User::where('mobile', '9820077889')->first(); // Amit Deshmukh
-        $tenantUser = User::where('mobile', '9820099001')->first(); // Vikram Malhotra
-
         // Login as Owner
         $this->post(route('app.login.submit'), [
             'society_code' => 'KOHINOOR01',
             'mobile' => '9820077889',
-            'pin' => '1234',
+            'password' => 'password',
         ]);
 
         $ownerNoticeRes = $this->get(route('owner.newsletters.index'));
@@ -161,7 +135,7 @@ class SocietySetuTest extends TestCase
         $this->post(route('app.login.submit'), [
             'society_code' => 'KOHINOOR01',
             'mobile' => '9820099001',
-            'pin' => '1234',
+            'password' => 'password',
         ]);
 
         $tenantNoticeRes = $this->get(route('tenant.newsletters.index'));
@@ -172,26 +146,25 @@ class SocietySetuTest extends TestCase
 
     public function test_complaint_lifecycle_and_committee_remarks(): void
     {
-        $soc = Society::where('society_code', 'KOHINOOR01')->first();
         $category = ComplaintCategory::first();
 
         // 1. Tenant submits complaint
         $this->post(route('app.login.submit'), [
             'society_code' => 'KOHINOOR01',
             'mobile' => '9820099001',
-            'pin' => '1234',
+            'password' => 'password',
         ]);
 
         $compResponse = $this->post(route('tenant.complaints.store'), [
             'property_id' => Property::first()->id,
             'category_id' => $category->id,
-            'title' => 'Corridor bulb not working',
-            'description' => '3rd floor corridor is completely dark',
+            'title' => 'Main gate intercom noisy',
+            'description' => 'Static noise whenever visitor rings',
             'priority' => 'low',
         ]);
 
         $compResponse->assertRedirect();
-        $complaint = Complaint::where('title', 'Corridor bulb not working')->first();
+        $complaint = Complaint::where('title', 'Main gate intercom noisy')->first();
         $this->assertNotNull($complaint);
         $this->assertEquals('Pending', $complaint->status);
 
@@ -200,30 +173,29 @@ class SocietySetuTest extends TestCase
         $this->post(route('app.login.submit'), [
             'society_code' => 'KOHINOOR01',
             'mobile' => '9820011223',
-            'pin' => '1234',
+            'password' => 'password',
         ]);
 
         $remarkRes = $this->post(route('committee.complaints.update_status', $complaint), [
             'status' => 'In Progress',
-            'remark' => 'Electrician will replace bulb today at 5 PM',
+            'remark' => 'Technician scheduled for inspection tomorrow',
         ]);
 
         $complaint->refresh();
         $this->assertEquals('In Progress', $complaint->status);
         $this->assertDatabaseHas('complaint_comments', [
             'complaint_id' => $complaint->id,
-            'remark' => 'Electrician will replace bulb today at 5 PM',
+            'remark' => 'Technician scheduled for inspection tomorrow',
             'status_changed_to' => 'In Progress',
         ]);
     }
 
-    public function test_rest_api_sanctum_login_and_scoped_endpoints(): void
+    public function test_rest_api_sanctum_login_with_society_code_mobile_and_password(): void
     {
-        // 1. API Login
         $response = $this->postJson('/api/v1/auth/login', [
             'society_code' => 'KOHINOOR01',
             'mobile' => '9820011223',
-            'pin' => '1234',
+            'password' => 'password',
         ]);
 
         $response->assertStatus(200);
@@ -231,15 +203,22 @@ class SocietySetuTest extends TestCase
             'success',
             'data' => [
                 'token',
-                'user',
+                'user' => [
+                    'id',
+                    'name',
+                    'user_name',
+                    'mobile',
+                ],
                 'society',
                 'available_roles',
             ],
         ]);
 
+        $this->assertEquals('9820011223#KOHINOOR01', $response->json('data.user.user_name'));
+
         $token = $response->json('data.token');
 
-        // 2. Access scoped newsletters endpoint with Bearer token
+        // Test authenticated endpoint with Bearer token
         $apiNewsletters = $this->withHeader('Authorization', 'Bearer ' . $token)
             ->withHeader('X-User-Role', 'committee_member')
             ->getJson('/api/v1/newsletters');

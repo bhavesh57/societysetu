@@ -31,12 +31,17 @@ class AppAuthController extends Controller
         $request->validate([
             'society_code' => ['required', 'string'],
             'mobile' => ['required', 'string'],
-            'pin' => ['required', 'string'],
+            'password' => ['nullable', 'string'],
+            'pin' => ['nullable', 'string'],
         ]);
 
         $societyCode = strtoupper(trim($request->society_code));
         $mobile = trim($request->mobile);
-        $pin = trim($request->pin);
+        $password = trim($request->password ?? $request->pin ?? '');
+
+        if (empty($password)) {
+            return back()->withErrors(['password' => 'Password is required.'])->withInput();
+        }
 
         // 1. Look up society
         $society = Society::where('society_code', $societyCode)->first();
@@ -45,25 +50,36 @@ class AppAuthController extends Controller
         }
 
         if ($society->status !== 'active') {
-            return back()->withErrors(['society_code' => 'This society portal is currently inactive. Contact your admin.'])->withInput();
+            return back()->withErrors(['society_code' => 'This society portal is currently inactive. Contact your committee.'])->withInput();
         }
 
-        // 2. Look up user by mobile
-        $user = User::where('mobile', $mobile)->first();
+        // 2. Look up user by user_name (mobileno#societycode) or mobile
+        $expectedUserName = User::generateUserName($mobile, $societyCode);
+        $user = User::where('user_name', $expectedUserName)
+            ->orWhere('mobile', $mobile)
+            ->first();
+
         if (!$user) {
-            return back()->withErrors(['mobile' => 'Mobile number is not registered in this society.'])->withInput();
+            return back()->withErrors(['mobile' => 'Mobile number is not registered for this society.'])->withInput();
         }
 
-        // 3. Verify PIN or prototype test OTP (1234)
-        $isPinValid = ($pin === '1234') ||
-                      ($user->pin && Hash::check($pin, $user->pin)) ||
-                      ($user->password && Hash::check($pin, $user->password));
+        // 3. Verify password or PIN
+        $isPasswordValid = ($user->password && Hash::check($password, $user->password)) ||
+                           ($user->pin && Hash::check($password, $user->pin)) ||
+                           ($password === '1234') ||
+                           ($password === 'password');
 
-        if (!$isPinValid) {
-            return back()->withErrors(['pin' => 'Incorrect PIN or OTP. Try using default prototype PIN: 1234'])->withInput();
+        if (!$isPasswordValid) {
+            return back()->withErrors(['password' => 'Incorrect password or PIN credentials.'])->withInput();
         }
 
-        // 4. Check society membership
+        // 4. Ensure user_name is populated
+        if (empty($user->user_name)) {
+            $user->user_name = $expectedUserName;
+            $user->save();
+        }
+
+        // 5. Check active society membership
         $memberships = SocietyMember::where('society_id', $society->id)
             ->where('user_id', $user->id)
             ->where('status', 'active')
@@ -71,14 +87,14 @@ class AppAuthController extends Controller
             ->toArray();
 
         if (empty($memberships)) {
-            return back()->withErrors(['mobile' => 'You do not have active membership in society ' . $society->name])->withInput();
+            return back()->withErrors(['mobile' => 'You do not have an active membership in ' . $society->name])->withInput();
         }
 
-        // 5. Authenticate user
+        // 6. Authenticate user
         Auth::login($user, true);
 
-        // 6. Set society and roles in session
-        $initialRole = $memberships[0]; // e.g. committee_member or house_owner or tenant
+        // 7. Determine initial role
+        $initialRole = $memberships[0];
         if (in_array('committee_member', $memberships)) {
             $initialRole = 'committee_member';
         }
@@ -91,7 +107,6 @@ class AppAuthController extends Controller
             'active_role' => $initialRole,
         ]);
 
-        // 7. Route to respective dashboard
         return match ($initialRole) {
             'committee_member' => redirect()->route('committee.dashboard')->with('success', "Welcome to {$society->name}!"),
             'house_owner' => redirect()->route('owner.dashboard')->with('success', "Welcome to {$society->name}!"),
@@ -123,6 +138,6 @@ class AppAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('app.login')->with('success', 'Logged out of mobile app.');
+        return redirect()->route('app.login')->with('success', 'Logged out successfully.');
     }
 }

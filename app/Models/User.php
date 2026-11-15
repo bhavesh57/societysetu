@@ -21,6 +21,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'user_name', // mobileno#societycode
         'email',
         'mobile',
         'password',
@@ -52,6 +53,14 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_super_admin' => 'boolean',
         ];
+    }
+
+    /**
+     * Helper to generate user_name format: mobileno#societycode
+     */
+    public static function generateUserName(string $mobile, string $societyCode): string
+    {
+        return trim($mobile) . '#' . strtoupper(trim($societyCode));
     }
 
     public function societyMembers(): HasMany

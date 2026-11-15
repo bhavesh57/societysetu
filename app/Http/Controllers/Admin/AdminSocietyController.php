@@ -38,7 +38,6 @@ class AdminSocietyController extends Controller
 
     public function create()
     {
-        // Suggest unique society code
         $suggestedCode = strtoupper(Str::random(3)) . rand(100, 999);
         return view('admin.societies.create', compact('suggestedCode'));
     }
@@ -69,8 +68,7 @@ class AdminSocietyController extends Controller
     public function show(Society $society)
     {
         $society->loadCount(['properties', 'members', 'complaints', 'newsletters']);
-        $committeeMembers = CommitteeMember::withoutGlobalScopes()
-            ->where('society_id', $society->id)
+        $committeeMembers = CommitteeMember::where('society_id', $society->id)
             ->with('user')
             ->get();
 
@@ -120,35 +118,40 @@ class AdminSocietyController extends Controller
             'name' => ['required', 'string', 'max:150'],
             'mobile' => ['required', 'string', 'regex:/^[0-9]{10}$/'],
             'designation' => ['required', 'string', 'in:President,Secretary,Treasurer,Member'],
-            'pin' => ['required', 'string', 'min:4', 'max:6'],
+            'password' => ['nullable', 'string', 'min:4'],
         ]);
 
-        // Find or create user by mobile
+        $password = $request->filled('password') ? $request->password : ($request->pin ?? '1234');
+        $userName = User::generateUserName($request->mobile, $society->society_code);
+
         $user = User::firstOrCreate(
             ['mobile' => $request->mobile],
             [
                 'name' => $request->name,
+                'user_name' => $userName,
                 'email' => null,
-                'pin' => Hash::make($request->pin),
-                'password' => Hash::make($request->pin),
+                'pin' => Hash::make($password),
+                'password' => Hash::make($password),
                 'is_super_admin' => false,
             ]
         );
 
-        // Ensure Spatie role
+        if (empty($user->user_name)) {
+            $user->user_name = $userName;
+            $user->save();
+        }
+
         $role = Role::firstOrCreate(['name' => 'committee_member']);
         if (!$user->hasRole('committee_member')) {
             $user->assignRole($role);
         }
 
-        // Add to society_members
         SocietyMember::firstOrCreate([
             'society_id' => $society->id,
             'user_id' => $user->id,
             'role_type' => 'committee_member',
         ], ['status' => 'active']);
 
-        // Add or update committee designation
         CommitteeMember::updateOrCreate([
             'society_id' => $society->id,
             'user_id' => $user->id,
@@ -159,6 +162,6 @@ class AdminSocietyController extends Controller
         ]);
 
         return redirect()->route('admin.societies.show', $society)
-            ->with('success', "Assigned {$user->name} as {$request->designation} for {$society->name}.");
+            ->with('success', "Assigned {$user->name} as {$request->designation} for {$society->name}. Username: {$userName}, Password: {$password}");
     }
 }

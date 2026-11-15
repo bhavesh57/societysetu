@@ -13,11 +13,7 @@ class SocietyScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
-        $societyId = static::getCurrentSocietyId();
-
-        if ($societyId) {
-            $builder->where($model->getTable() . '.society_id', $societyId);
-        }
+        // Global scope removed per user request for direct query control
     }
 
     /**
@@ -25,19 +21,12 @@ class SocietyScope implements Scope
      */
     public static function getCurrentSocietyId(): ?int
     {
-        // 1. Session based (Web / NativePHP Mobile WebView)
         if (session()->has('current_society_id')) {
             return (int) session('current_society_id');
         }
 
-        // 2. Request header based (API / Native Mobile Client)
         if (request()->hasHeader('X-Society-Id')) {
             return (int) request()->header('X-Society-Id');
-        }
-
-        // 3. User property if set
-        if (auth()->check() && !empty(auth()->user()->current_society_id)) {
-            return (int) auth()->user()->current_society_id;
         }
 
         return null;

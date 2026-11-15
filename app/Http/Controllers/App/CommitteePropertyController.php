@@ -10,7 +10,10 @@ class CommitteePropertyController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Property::with(['owners', 'currentTenant.tenantUser']);
+        $societyId = session('current_society_id');
+
+        $query = Property::where('society_id', $societyId)
+            ->with(['owners', 'currentTenant.tenantUser']);
 
         if ($request->filled('wing')) {
             $query->where('wing_or_block', 'like', "%{$request->wing}%");
@@ -41,8 +44,8 @@ class CommitteePropertyController extends Controller
             'occupancy_status' => ['required', 'string', 'in:vacant,owner_occupied,rented'],
         ]);
 
-        // Check unique wing and house number in this society
-        $exists = Property::where('wing_or_block', $validated['wing_or_block'])
+        $exists = Property::where('society_id', $societyId)
+            ->where('wing_or_block', $validated['wing_or_block'])
             ->where('house_number', $validated['house_number'])
             ->exists();
 
@@ -50,6 +53,7 @@ class CommitteePropertyController extends Controller
             return back()->withErrors(['house_number' => 'This unit already exists in this wing/block.'])->withInput();
         }
 
+        $validated['society_id'] = $societyId;
         $property = Property::create($validated);
 
         return redirect()->route('committee.properties.index')

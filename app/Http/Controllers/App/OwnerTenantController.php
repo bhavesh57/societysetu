@@ -4,6 +4,7 @@ namespace App\Http\Controllers\App;
 
 use App\Http\Controllers\Controller;
 use App\Models\Property;
+use App\Models\Society;
 use App\Models\SocietyMember;
 use App\Models\Tenant;
 use App\Models\User;
@@ -19,13 +20,15 @@ class OwnerTenantController extends Controller
         $userId = Auth::id();
         $societyId = session('current_society_id');
 
-        $ownedProperties = Property::whereHas('owners', function ($q) use ($userId) {
-            $q->where('users.id', $userId);
-        })->get();
+        $ownedProperties = Property::where('society_id', $societyId)
+            ->whereHas('owners', function ($q) use ($userId) {
+                $q->where('users.id', $userId);
+            })->get();
 
         $propertyIds = $ownedProperties->pluck('id')->toArray();
 
-        $tenants = Tenant::whereIn('property_id', $propertyIds)
+        $tenants = Tenant::where('society_id', $societyId)
+            ->whereIn('property_id', $propertyIds)
             ->with(['property', 'tenantUser'])
             ->latest()
             ->get();
@@ -37,32 +40,42 @@ class OwnerTenantController extends Controller
     {
         $userId = Auth::id();
         $societyId = session('current_society_id');
+        $society = Society::findOrFail($societyId);
 
         $request->validate([
             'property_id' => ['required', 'exists:properties,id'],
             'name' => ['required', 'string', 'max:150'],
             'mobile' => ['required', 'string', 'regex:/^[0-9]{10}$/'],
             'email' => ['nullable', 'email'],
+            'password' => ['nullable', 'string', 'min:4'],
             'lease_start_date' => ['required', 'date'],
             'lease_end_date' => ['nullable', 'date', 'after:lease_start_date'],
         ]);
 
-        // Verify that the current authenticated user actually owns this property
-        $prop = Property::where('id', $request->property_id)
+        $prop = Property::where('society_id', $societyId)
+            ->where('id', $request->property_id)
             ->whereHas('owners', function ($q) use ($userId) {
                 $q->where('users.id', $userId);
             })->firstOrFail();
 
-        // Create or get tenant user
+        $password = $request->filled('password') ? $request->password : '1234';
+        $userName = User::generateUserName($request->mobile, $society->society_code);
+
         $user = User::firstOrCreate(
             ['mobile' => $request->mobile],
             [
                 'name' => $request->name,
+                'user_name' => $userName,
                 'email' => $request->email,
-                'pin' => Hash::make('1234'),
-                'password' => Hash::make('1234'),
+                'pin' => Hash::make($password),
+                'password' => Hash::make($password),
             ]
         );
+
+        if (empty($user->user_name)) {
+            $user->user_name = $userName;
+            $user->save();
+        }
 
         $roleTenant = Role::firstOrCreate(['name' => 'tenant']);
         if (!$user->hasRole('tenant')) {
@@ -89,14 +102,13 @@ class OwnerTenantController extends Controller
         $prop->save();
 
         return redirect()->route('owner.tenants.index')
-            ->with('success', "Tenant {$user->name} added successfully for unit {$prop->full_identifier}. Default PIN: 1234");
+            ->with('success', "Tenant {$user->name} added successfully for unit {$prop->full_identifier}. Username: {$userName}, Password: {$password}");
     }
 
     public function deactivate(Tenant $tenant)
     {
         $userId = Auth::id();
 
-        // Verify ownership
         if ($tenant->owner_id !== $userId) {
             abort(403);
         }
@@ -104,7 +116,6 @@ class OwnerTenantController extends Controller
         $tenant->status = 'moved_out';
         $tenant->save();
 
-        // Check if property still has active tenants
         $hasOtherActive = Tenant::where('property_id', $tenant->property_id)
             ->where('status', 'active')
             ->exists();

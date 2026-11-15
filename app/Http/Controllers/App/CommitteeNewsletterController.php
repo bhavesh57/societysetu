@@ -13,7 +13,10 @@ class CommitteeNewsletterController extends Controller
 {
     public function index()
     {
-        $newsletters = Newsletter::with('author')
+        $societyId = session('current_society_id');
+
+        $newsletters = Newsletter::where('society_id', $societyId)
+            ->with('author')
             ->withCount('recipients')
             ->latest()
             ->paginate(10);
@@ -53,7 +56,6 @@ class CommitteeNewsletterController extends Controller
             'published_at' => now(),
         ]);
 
-        // Auto-populate recipients based on audience
         $this->populateRecipients($newsletter);
 
         return redirect()->route('committee.newsletters.index')
