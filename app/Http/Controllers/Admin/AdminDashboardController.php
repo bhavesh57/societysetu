@@ -17,8 +17,8 @@ class AdminDashboardController extends Controller
         $inactiveSocieties = Society::where('status', 'inactive')->count();
         $totalUsers = User::where('is_super_admin', false)->count();
         $totalCommittee = CommitteeMember::distinct('user_id')->count('user_id');
-        $totalComplaints = Complaint::withoutGlobalScopes()->count();
-        $pendingComplaints = Complaint::withoutGlobalScopes()->where('status', 'Pending')->count();
+        $totalComplaints = Complaint::count();
+        $pendingComplaints = Complaint::where('status', 'Pending')->count();
 
         $recentSocieties = Society::withCount(['properties', 'members', 'complaints'])
             ->latest()
@@ -35,5 +35,10 @@ class AdminDashboardController extends Controller
             'pendingComplaints',
             'recentSocieties'
         ));
+    }
+
+    public function docs()
+    {
+        return view('admin.docs');
     }
 }

@@ -3,7 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Super Admin Login | SocietySetu</title>
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+    <title>SSA Portal Access | SocietySetu</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex items-center justify-center p-4">
@@ -14,7 +15,7 @@
                 SS
             </div>
             <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Society<span class="text-teal-600">Setu</span></h1>
-            <p class="text-xs text-slate-500 mt-1">Super Administrator Web Portal</p>
+            <p class="text-xs text-slate-500 mt-1 font-mono uppercase tracking-wider">Super Administrator Console (SSA)</p>
         </div>
 
         <div class="card p-8 bg-white shadow-md">
@@ -52,15 +53,9 @@
                 </div>
 
                 <button type="submit" class="btn-primary w-full py-2.5 text-sm font-semibold shadow-sm">
-                    Sign In as Super Admin
+                    Sign In to SSA Console
                 </button>
             </form>
-
-            <div class="mt-6 pt-6 border-t border-slate-100 text-center">
-                <a href="{{ route('home') }}" class="text-xs text-teal-600 hover:text-teal-700 font-medium">
-                    &larr; Return to Home / Switch to Mobile View
-                </a>
-            </div>
         </div>
     </div>
 </body>

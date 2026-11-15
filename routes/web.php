@@ -19,20 +19,23 @@ use App\Http\Controllers\App\TenantDashboardController;
 use App\Http\Controllers\App\TenantNewsletterController;
 use Illuminate\Support\Facades\Route;
 
-// Welcome / Portal Selection
+// Public Customer Website Landing Page (No Login Buttons)
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
 /*
 |--------------------------------------------------------------------------
-| Super Admin Web Portal
+| Super Admin Console (SSA Slug instead of admin)
 |--------------------------------------------------------------------------
 */
-Route::prefix('admin')->group(function () {
+Route::prefix('ssa')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('admin.login');
     Route::post('/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+
+    // Public / semi-private developer & API docs accessible under ssa/docs
+    Route::get('/docs', [AdminDashboardController::class, 'docs'])->name('admin.docs');
 
     Route::middleware(['auth', 'super_admin'])->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
@@ -51,6 +54,11 @@ Route::prefix('admin')->group(function () {
         Route::get('/monitoring', [AdminMonitoringController::class, 'index'])->name('admin.monitoring');
     });
 });
+
+// Redirect legacy /admin URLs to /ssa
+Route::redirect('/admin', '/ssa/login');
+Route::redirect('/admin/login', '/ssa/login');
+Route::redirect('/admin/dashboard', '/ssa/dashboard');
 
 /*
 |--------------------------------------------------------------------------

@@ -21,21 +21,51 @@ class SocietySetuTest extends TestCase
         session()->flush();
     }
 
-    public function test_welcome_page_describes_platform_without_login_buttons(): void
+    public function test_customer_landing_page_does_not_show_project_details_or_login_buttons(): void
     {
         $response = $this->get('/');
         $response->assertStatus(200);
         $response->assertSee('SocietySetu');
-        $response->assertSee('What SocietySetu Provides');
-        $response->assertSee('mobileno#societycode');
+        $response->assertSee('What We Provide');
+        $response->assertSee('Next-Generation Society Living');
 
-        // Verify NO login buttons or links are displayed on the landing showcase
+        // Verify NO project/developer details are displayed on customer landing page
+        $response->assertDontSee('API & Engine Active');
+        $response->assertDontSee('mobileno#societycode');
+        $response->assertDontSee('Single-Codebase Technology Stack');
+        $response->assertDontSee('Live REST API Endpoints');
+        $response->assertDontSee('Phase 1 Prototype');
+
+        // Verify NO login buttons are displayed
         $response->assertDontSee('Sign In as Super Admin');
         $response->assertDontSee('Enter Society Portal');
         $response->assertDontSee('Mobile App View');
         $response->assertDontSee('Super Admin Portal');
         $response->assertDontSee('Launch Mobile App Portal');
         $response->assertDontSee('Open Super Admin Login');
+    }
+
+    public function test_ssa_slug_and_docs_page(): void
+    {
+        // 1. SSA Login page loads
+        $loginRes = $this->get('/ssa/login');
+        $loginRes->assertStatus(200);
+        $loginRes->assertSee('SSA Portal Access');
+
+        // 2. Legacy /admin redirects to /ssa/login
+        $adminRedirect = $this->get('/admin/login');
+        $adminRedirect->assertRedirect('/ssa/login');
+
+        // 3. SSA Docs page is accessible and displays technical specifications
+        $docsRes = $this->get('/ssa/docs');
+        $docsRes->assertStatus(200);
+        $docsRes->assertSee('SocietySetu Technical Documentation');
+        $docsRes->assertSee('mobileno#societycode');
+        $docsRes->assertSee('Live REST API v1 Documentation');
+        $docsRes->assertSee('Single-Codebase Technology Architecture');
+
+        // 4. Verify noindex robots meta tag protects ssa and docs from search engines
+        $docsRes->assertSee('noindex, nofollow, noarchive, nosnippet');
     }
 
     public function test_users_have_user_name_in_mobile_hash_society_format(): void
@@ -51,6 +81,22 @@ class SocietySetuTest extends TestCase
         $userVikram = User::where('mobile', '9820099001')->first();
         $this->assertNotNull($userVikram);
         $this->assertEquals('9820099001#KOHINOOR01', $userVikram->user_name);
+    }
+
+    public function test_super_admin_can_login_via_ssa_and_access_dashboard(): void
+    {
+        $response = $this->post('/ssa/login', [
+            'email' => 'admin@societysetu.com',
+            'password' => 'password',
+        ]);
+
+        $response->assertRedirect(route('admin.dashboard'));
+        $this->assertAuthenticated();
+        $this->assertTrue(auth()->user()->is_super_admin);
+
+        $dashResponse = $this->get('/ssa/dashboard');
+        $dashResponse->assertStatus(200);
+        $dashResponse->assertSee('Super Admin Overview');
     }
 
     public function test_committee_login_with_society_code_mobile_and_password(): void
@@ -94,7 +140,6 @@ class SocietySetuTest extends TestCase
 
     public function test_mobile_multi_role_support_and_role_switcher(): void
     {
-        // Rajesh Sharma holds both committee_member AND house_owner
         $res = $this->post(route('app.login.submit'), [
             'society_code' => 'KOHINOOR01',
             'mobile' => '9820011223',
@@ -104,7 +149,6 @@ class SocietySetuTest extends TestCase
         $this->assertContains('committee_member', session('available_roles'));
         $this->assertContains('house_owner', session('available_roles'));
 
-        // Switch to house_owner view
         $switchRes = $this->get(route('app.switch_role', 'house_owner'));
         $switchRes->assertRedirect(route('owner.dashboard'));
         $this->assertEquals('house_owner', session('active_role'));
@@ -158,13 +202,13 @@ class SocietySetuTest extends TestCase
         $compResponse = $this->post(route('tenant.complaints.store'), [
             'property_id' => Property::first()->id,
             'category_id' => $category->id,
-            'title' => 'Main gate intercom noisy',
-            'description' => 'Static noise whenever visitor rings',
+            'title' => 'Main gate intercom issue',
+            'description' => 'Static sound when buzzer rings',
             'priority' => 'low',
         ]);
 
         $compResponse->assertRedirect();
-        $complaint = Complaint::where('title', 'Main gate intercom noisy')->first();
+        $complaint = Complaint::where('title', 'Main gate intercom issue')->first();
         $this->assertNotNull($complaint);
         $this->assertEquals('Pending', $complaint->status);
 
@@ -218,7 +262,6 @@ class SocietySetuTest extends TestCase
 
         $token = $response->json('data.token');
 
-        // Test authenticated endpoint with Bearer token
         $apiNewsletters = $this->withHeader('Authorization', 'Bearer ' . $token)
             ->withHeader('X-User-Role', 'committee_member')
             ->getJson('/api/v1/newsletters');
