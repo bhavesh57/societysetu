@@ -208,5 +208,50 @@ curl -X POST http://127.0.0.1:8000/api/v1/complaints/1/comment \<br>
             </table>
         </div>
     </div>
+
+    <!-- Section 5: NativePHP Mobile & Play Store Packaging -->
+    <div class="card p-6 bg-white space-y-4">
+        <div class="flex items-center space-x-2">
+            <span class="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 font-bold flex items-center justify-center text-sm">05</span>
+            <h2 class="text-lg font-bold text-slate-900">NativePHP Mobile & Google Play Store Packaging</h2>
+        </div>
+        <p class="text-xs text-slate-600">
+            SocietySetu is pre-configured with <strong class="text-teal-700">NativePHP for Mobile</strong> (Package: <code class="font-mono bg-slate-100 text-teal-800 px-1 py-0.5 rounded">com.abmdigitallab.societysetu</code>) to compile directly into native Android / iOS binaries.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div class="border border-slate-200 rounded-xl p-4 space-y-2">
+                <span class="font-bold text-slate-900 block">1. Test with Companion (No SDK Required)</span>
+                <p class="text-slate-600 text-[11px]">Instant live testing on physical device via NativePHP Jump QR code:</p>
+                <div class="p-2.5 bg-slate-900 text-emerald-400 rounded-lg font-mono text-[11px]">
+                    php artisan native:jump
+                </div>
+            </div>
+
+            <div class="border border-slate-200 rounded-xl p-4 space-y-2">
+                <span class="font-bold text-slate-900 block">2. Generate Play Store Keystore Credentials</span>
+                <p class="text-slate-600 text-[11px]">Creates the upload keystore and certificates for signing:</p>
+                <div class="p-2.5 bg-slate-900 text-emerald-400 rounded-lg font-mono text-[11px]">
+                    php artisan native:credentials android
+                </div>
+            </div>
+
+            <div class="border border-slate-200 rounded-xl p-4 space-y-2">
+                <span class="font-bold text-slate-900 block">3. Open Android Studio Project</span>
+                <p class="text-slate-600 text-[11px]">Opens the native Android project in <code class="font-mono text-teal-700">nativephp/android</code>:</p>
+                <div class="p-2.5 bg-slate-900 text-emerald-400 rounded-lg font-mono text-[11px]">
+                    php artisan native:open
+                </div>
+            </div>
+
+            <div class="border border-slate-200 rounded-xl p-4 space-y-2">
+                <span class="font-bold text-slate-900 block">4. Build Signed Play Store Bundle (.aab)</span>
+                <p class="text-slate-600 text-[11px]">Generates the production Android App Bundle for Google Play Console upload:</p>
+                <div class="p-2.5 bg-slate-900 text-emerald-400 rounded-lg font-mono text-[11px]">
+                    php artisan native:package android --build-type=bundle
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

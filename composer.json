@@ -11,6 +11,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "nativephp/mobile": "^4.8",
+        "nativephp/mobile-ui": "^0.10.0",
         "spatie/laravel-permission": "^6.25"
     },
     "require-dev": {
