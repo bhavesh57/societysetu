@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
     <title>Resident &amp; Committee Login | SocietySetu</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -30,14 +31,15 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('app.login.submit') }}" id="loginForm" class="space-y-4">
+            <form method="POST" action="{{ route('app.login.submit') }}" id="loginForm" class="space-y-4" autocomplete="off">
                 @csrf
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                         Society Code <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" id="society_code" name="society_code" value="{{ old('society_code', 'KOHINOOR01') }}" required
-                           placeholder="e.g. KOHINOOR01"
+                    <input type="text" id="society_code" name="society_code" value="{{ old('society_code') }}" required
+                           placeholder="Enter society code"
+                           autocomplete="off"
                            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm font-mono font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-teal-500">
                 </div>
 
@@ -45,20 +47,19 @@
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                         Mobile Number <span class="text-red-500">*</span>
                     </label>
-                    <input type="tel" id="mobile" name="mobile" value="{{ old('mobile', '9820011223') }}" required pattern="[0-9]{10}"
-                           placeholder="10-digit mobile number"
+                    <input type="tel" id="mobile" name="mobile" value="{{ old('mobile') }}" required pattern="[0-9]{10}"
+                           placeholder="10-digit registered mobile number"
+                           autocomplete="off"
                            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-teal-500">
                 </div>
 
                 <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                            Password / PIN <span class="text-red-500">*</span>
-                        </label>
-                        <span class="text-[10px] text-teal-600 font-semibold">(Default: password or 1234)</span>
-                    </div>
-                    <input type="password" id="password" name="password" value="password" required
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Password / PIN <span class="text-red-500">*</span>
+                    </label>
+                    <input type="password" id="password" name="password" value="" required
                            placeholder="Enter your password"
+                           autocomplete="new-password"
                            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
                 </div>
 
@@ -66,40 +67,7 @@
                     Enter Society Portal
                 </button>
             </form>
-
-            <!-- Quick prototype buttons -->
-            <div class="mt-6 pt-5 border-t border-slate-100">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block text-center mb-2">
-                    Quick Test Accounts
-                </span>
-                <div class="grid grid-cols-3 gap-1.5 text-center">
-                    <button type="button" onclick="fillLogin('KOHINOOR01', '9820011223', 'password')"
-                            class="p-2 rounded border border-teal-200 bg-teal-50/70 hover:bg-teal-100 text-teal-900 transition text-xs">
-                        <span class="font-bold block text-[11px]">Committee</span>
-                        <span class="text-[9px] text-slate-500">Rajesh S.</span>
-                    </button>
-                    <button type="button" onclick="fillLogin('KOHINOOR01', '9820077889', 'password')"
-                            class="p-2 rounded border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-blue-900 transition text-xs">
-                        <span class="font-bold block text-[11px]">Owner</span>
-                        <span class="text-[9px] text-slate-500">Amit D.</span>
-                    </button>
-                    <button type="button" onclick="fillLogin('KOHINOOR01', '9820099001', 'password')"
-                            class="p-2 rounded border border-amber-200 bg-amber-50/70 hover:bg-amber-100 text-amber-900 transition text-xs">
-                        <span class="font-bold block text-[11px]">Tenant</span>
-                        <span class="text-[9px] text-slate-500">Vikram M.</span>
-                    </button>
-                </div>
-            </div>
         </div>
     </div>
-
-    <script>
-        function fillLogin(code, mob, pwd) {
-            document.getElementById('society_code').value = code;
-            document.getElementById('mobile').value = mob;
-            document.getElementById('password').value = pwd;
-            document.getElementById('loginForm').submit();
-        }
-    </script>
 </body>
 </html>

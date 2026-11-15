@@ -115,8 +115,9 @@
                             </select>
                         </div>
                         <div class="sm:col-span-1">
-                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Default PIN</label>
-                            <input type="text" name="pin" value="1234" required minlength="4" maxlength="6"
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Set PIN / Password</label>
+                            <input type="text" name="pin" value="{{ old('pin') }}" placeholder="e.g. 1234" required minlength="4" maxlength="6"
+                                   autocomplete="off"
                                    class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
                         </div>
                     </div>

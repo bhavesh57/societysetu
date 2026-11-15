@@ -200,7 +200,7 @@
                     </div>
                     <h3 class="text-base font-bold text-slate-900">Society Code Setup</h3>
                     <p class="text-xs text-slate-600 leading-relaxed">
-                        Your complex is provisioned with a unique, memorable code (e.g., KOHINOOR01) and unit structure.
+                        Your complex is provisioned with a unique, memorable society code and unit structure.
                     </p>
                 </div>
 

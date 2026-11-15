@@ -199,16 +199,17 @@ class SocietySetuTest extends TestCase
             'password' => 'password',
         ]);
 
+        $uniqueTitle = 'Main gate issue ' . uniqid();
         $compResponse = $this->post(route('tenant.complaints.store'), [
             'property_id' => Property::first()->id,
             'category_id' => $category->id,
-            'title' => 'Main gate intercom issue',
+            'title' => $uniqueTitle,
             'description' => 'Static sound when buzzer rings',
             'priority' => 'low',
         ]);
 
         $compResponse->assertRedirect();
-        $complaint = Complaint::where('title', 'Main gate intercom issue')->first();
+        $complaint = Complaint::where('title', $uniqueTitle)->first();
         $this->assertNotNull($complaint);
         $this->assertEquals('Pending', $complaint->status);
 
