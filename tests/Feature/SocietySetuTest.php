@@ -274,33 +274,47 @@ class SocietySetuTest extends TestCase
     public function test_login_supports_username_email_and_mobile_and_rejects_backdoor_passwords(): void
     {
         $user = User::where('mobile', '9820011223')->firstOrFail();
-        $user->update([
-            'email' => 'rajesh.kohinoor@societysetu.test',
-            'password' => bcrypt('StrongPass@2026'),
-            'pin' => null,
-        ]);
+        $originalEmail = $user->email;
+        $originalPassword = $user->password;
+        $originalPin = $user->pin;
 
-        // Backdoor passwords must be rejected
-        $this->post(route('app.login.submit'), [
-            'society_code' => 'KOHINOOR01',
-            'mobile' => '9820011223',
-            'password' => '1234',
-        ])->assertSessionHasErrors('password');
+        try {
+            $user->update([
+                'email' => 'rajesh.kohinoor@societysetu.test',
+                'password' => bcrypt('StrongPass@2026'),
+                'pin' => null,
+            ]);
 
-        $this->postJson('/api/v1/auth/login', [
-            'society_code' => 'KOHINOOR01',
-            'mobile' => '9820011223',
-            'password' => 'password',
-        ])->assertStatus(401);
+            // Backdoor passwords must be rejected
+            $this->post(route('app.login.submit'), [
+                'society_code' => 'KOHINOOR01',
+                'mobile' => '9820011223',
+                'password' => '1234',
+            ])->assertSessionHasErrors('password');
 
-        // Login with user_name, email, and mobile (without society_code)
-        foreach ([$user->user_name, $user->email, $user->mobile] as $identifier) {
             $this->postJson('/api/v1/auth/login', [
-                'login' => $identifier,
-                'password' => 'StrongPass@2026',
-            ])->assertOk()
-                ->assertHeader('X-Content-Type-Options', 'nosniff')
-                ->assertJsonPath('data.user.user_name', $user->user_name);
+                'society_code' => 'KOHINOOR01',
+                'mobile' => '9820011223',
+                'password' => 'password',
+            ])->assertStatus(401);
+
+            // Login with user_name, email, and mobile (without society_code)
+            foreach ([$user->user_name, $user->email, $user->mobile] as $identifier) {
+                $this->postJson('/api/v1/auth/login', [
+                    'login' => $identifier,
+                    'password' => 'StrongPass@2026',
+                ])->assertOk()
+                    ->assertHeader('X-Content-Type-Options', 'nosniff')
+                    ->assertJsonPath('data.user.user_name', $user->user_name);
+            }
+        } finally {
+            \Illuminate\Support\Facades\DB::table('users')
+                ->where('id', $user->id)
+                ->update([
+                    'email' => $originalEmail,
+                    'password' => $originalPassword,
+                    'pin' => $originalPin,
+                ]);
         }
     }
 }
