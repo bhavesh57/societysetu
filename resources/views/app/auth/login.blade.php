@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
     <title>Resident &amp; Committee Login | SocietySetu</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -31,35 +31,35 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('app.login.submit') }}" id="loginForm" class="space-y-4" autocomplete="off">
+            <form method="POST" action="{{ route('app.login.submit') }}" id="loginForm" class="space-y-4">
                 @csrf
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Society Code <span class="text-red-500">*</span>
+                    <label for="society_code" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Society Code <span class="text-slate-400 font-normal normal-case">(optional with username/email)</span>
                     </label>
-                    <input type="text" id="society_code" name="society_code" value="{{ old('society_code') }}" required
-                           placeholder="Enter society code"
-                           autocomplete="off"
+                    <input type="text" id="society_code" name="society_code" value="{{ old('society_code') }}"
+                           placeholder="e.g. KOHINOOR01"
+                           autocomplete="organization"
                            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm font-mono font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-teal-500">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Mobile Number <span class="text-red-500">*</span>
+                    <label for="mobile" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Username, Email, or Mobile <span class="text-red-500">*</span>
                     </label>
-                    <input type="tel" id="mobile" name="mobile" value="{{ old('mobile') }}" required pattern="[0-9]{10}"
-                           placeholder="10-digit registered mobile number"
-                           autocomplete="off"
-                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    <input type="text" id="mobile" name="mobile" value="{{ old('mobile') }}" required
+                           placeholder="Username, email, or 10-digit mobile"
+                           autocomplete="username"
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    <label for="password" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                         Password / PIN <span class="text-red-500">*</span>
                     </label>
                     <input type="password" id="password" name="password" value="" required
                            placeholder="Enter your password"
-                           autocomplete="new-password"
+                           autocomplete="current-password"
                            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
                 </div>
 

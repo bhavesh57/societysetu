@@ -270,4 +270,37 @@ class SocietySetuTest extends TestCase
         $apiNewsletters->assertStatus(200);
         $apiNewsletters->assertJsonStructure(['success', 'data']);
     }
+
+    public function test_login_supports_username_email_and_mobile_and_rejects_backdoor_passwords(): void
+    {
+        $user = User::where('mobile', '9820011223')->firstOrFail();
+        $user->update([
+            'email' => 'rajesh.kohinoor@societysetu.test',
+            'password' => bcrypt('StrongPass@2026'),
+            'pin' => null,
+        ]);
+
+        // Backdoor passwords must be rejected
+        $this->post(route('app.login.submit'), [
+            'society_code' => 'KOHINOOR01',
+            'mobile' => '9820011223',
+            'password' => '1234',
+        ])->assertSessionHasErrors('password');
+
+        $this->postJson('/api/v1/auth/login', [
+            'society_code' => 'KOHINOOR01',
+            'mobile' => '9820011223',
+            'password' => 'password',
+        ])->assertStatus(401);
+
+        // Login with user_name, email, and mobile (without society_code)
+        foreach ([$user->user_name, $user->email, $user->mobile] as $identifier) {
+            $this->postJson('/api/v1/auth/login', [
+                'login' => $identifier,
+                'password' => 'StrongPass@2026',
+            ])->assertOk()
+                ->assertHeader('X-Content-Type-Options', 'nosniff')
+                ->assertJsonPath('data.user.user_name', $user->user_name);
+        }
+    }
 }

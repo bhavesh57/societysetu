@@ -13,6 +13,13 @@
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
+                <button type="button" onclick="document.getElementById('ssa-mobile-nav').classList.toggle('hidden')"
+                        class="md:hidden p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100"
+                        aria-label="Toggle navigation">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center space-x-2">
                     <span class="w-9 h-9 rounded-lg bg-teal-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
                         SS
@@ -58,6 +65,22 @@
                 @endif
             </div>
         </div>
+
+        <!-- Mobile Navigation Drawer -->
+        <nav id="ssa-mobile-nav" class="hidden md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-1">
+            <a href="{{ route('admin.dashboard') }}" class="block px-3 py-2 rounded-md text-xs font-semibold {{ request()->routeIs('admin.dashboard') ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-100' }}">
+                Dashboard
+            </a>
+            <a href="{{ route('admin.societies.index') }}" class="block px-3 py-2 rounded-md text-xs font-semibold {{ request()->routeIs('admin.societies.*') ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-100' }}">
+                Societies
+            </a>
+            <a href="{{ route('admin.monitoring') }}" class="block px-3 py-2 rounded-md text-xs font-semibold {{ request()->routeIs('admin.monitoring') ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-100' }}">
+                Monitoring
+            </a>
+            <a href="{{ route('admin.docs') }}" class="block px-3 py-2 rounded-md text-xs font-semibold {{ request()->routeIs('admin.docs') ? 'bg-purple-50 text-purple-700 font-bold' : 'text-purple-700 hover:bg-purple-50' }}">
+                📘 API &amp; Dev Docs
+            </a>
+        </nav>
     </header>
 
     <!-- Main Content -->
@@ -84,7 +107,7 @@
     </main>
 
     <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
-        &copy; {{ date('Y') }} SocietySetu SSA Administration &bull; Internal Console &bull; <meta name="robots" content="noindex">
+        &copy; {{ date('Y') }} SocietySetu SSA Administration &bull; Internal Console
     </footer>
 </body>
 </html>

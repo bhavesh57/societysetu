@@ -31,13 +31,13 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('admin.login.submit') }}" class="space-y-4" autocomplete="off">
+            <form method="POST" action="{{ route('admin.login.submit') }}" class="space-y-4">
                 @csrf
                 <div>
-                    <label for="email" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Email Address</label>
-                    <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus
-                           placeholder="Enter your administrator email"
-                           autocomplete="off"
+                    <label for="email" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Username, Email, or Mobile</label>
+                    <input type="text" id="email" name="email" value="{{ old('email') }}" required autofocus
+                           placeholder="Enter username, email, or mobile"
+                           autocomplete="username"
                            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
                 </div>
 
@@ -45,7 +45,7 @@
                     <label for="password" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password</label>
                     <input type="password" id="password" name="password" value="" required
                            placeholder="Enter password"
-                           autocomplete="new-password"
+                           autocomplete="current-password"
                            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
                 </div>
 

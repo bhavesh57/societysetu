@@ -29,57 +29,65 @@ class AppAuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'society_code' => ['required', 'string'],
-            'mobile' => ['required', 'string'],
+            'society_code' => ['nullable', 'string', 'max:60'],
+            'login' => ['required_without_all:mobile,email', 'nullable', 'string', 'max:150'],
+            'mobile' => ['required_without_all:login,email', 'nullable', 'string', 'max:150'],
+            'email' => ['required_without_all:login,mobile', 'nullable', 'string', 'max:150'],
             'password' => ['nullable', 'string'],
             'pin' => ['nullable', 'string'],
         ]);
 
-        $societyCode = strtoupper(trim($request->society_code));
-        $mobile = trim($request->mobile);
-        $password = trim($request->password ?? $request->pin ?? '');
+        $societyCode = strtoupper(trim((string) $request->input('society_code', '')));
+        $identifier = trim((string) ($request->input('login') ?? $request->input('mobile') ?? $request->input('email') ?? ''));
+        $password = trim((string) ($request->password ?? $request->pin ?? ''));
 
         if (empty($password)) {
             return back()->withErrors(['password' => 'Password is required.'])->withInput();
         }
 
-        // 1. Look up society
-        $society = Society::where('society_code', $societyCode)->first();
-        if (!$society) {
-            return back()->withErrors(['society_code' => 'No society found matching this code.'])->withInput();
+        $society = null;
+        if ($societyCode !== '') {
+            $society = Society::where('society_code', $societyCode)->first();
+            if (!$society) {
+                return back()->withErrors(['society_code' => 'No society found matching this code.'])->withInput();
+            }
+            if ($society->status !== 'active') {
+                return back()->withErrors(['society_code' => 'This society portal is currently inactive. Contact your committee.'])->withInput();
+            }
         }
 
-        if ($society->status !== 'active') {
-            return back()->withErrors(['society_code' => 'This society portal is currently inactive. Contact your committee.'])->withInput();
-        }
-
-        // 2. Look up user by user_name (mobileno#societycode) or mobile
-        $expectedUserName = User::generateUserName($mobile, $societyCode);
-        $user = User::where('user_name', $expectedUserName)
-            ->orWhere('mobile', $mobile)
-            ->first();
+        $user = User::findByLoginIdentifier($identifier, $society?->id, $society?->society_code);
 
         if (!$user) {
-            return back()->withErrors(['mobile' => 'Mobile number is not registered for this society.'])->withInput();
+            return back()->withErrors(['mobile' => 'Account not found for the provided credentials.'])->withInput();
         }
 
-        // 3. Verify password or PIN
+        // Verify password or PIN strictly (no hardcoded backdoors)
         $isPasswordValid = ($user->password && Hash::check($password, $user->password)) ||
-                           ($user->pin && Hash::check($password, $user->pin)) ||
-                           ($password === '1234') ||
-                           ($password === 'password');
+                           ($user->pin && Hash::check($password, $user->pin));
 
         if (!$isPasswordValid) {
             return back()->withErrors(['password' => 'Incorrect password or PIN credentials.'])->withInput();
         }
 
-        // 4. Ensure user_name is populated
-        if (empty($user->user_name)) {
-            $user->user_name = $expectedUserName;
+        if (!$society) {
+            $membership = SocietyMember::with('society')
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->whereHas('society', fn ($q) => $q->where('status', 'active'))
+                ->first();
+            $society = $membership?->society;
+        }
+
+        if (!$society) {
+            return back()->withErrors(['mobile' => 'You do not have an active society membership.'])->withInput();
+        }
+
+        if (empty($user->user_name) && !empty($user->mobile)) {
+            $user->user_name = User::generateUserName($user->mobile, $society->society_code);
             $user->save();
         }
 
-        // 5. Check active society membership
         $memberships = SocietyMember::where('society_id', $society->id)
             ->where('user_id', $user->id)
             ->where('status', 'active')
@@ -90,8 +98,8 @@ class AppAuthController extends Controller
             return back()->withErrors(['mobile' => 'You do not have an active membership in ' . $society->name])->withInput();
         }
 
-        // 6. Authenticate user
         Auth::login($user, true);
+        $request->session()->regenerate();
 
         // 7. Determine initial role
         $initialRole = $memberships[0];

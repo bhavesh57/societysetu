@@ -31,7 +31,7 @@ Route::get('/', function () {
 */
 Route::prefix('ssa')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('admin.login');
-    Route::post('/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
+    Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:10,1')->name('admin.login.submit');
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
     // Public / semi-private developer & API docs accessible under ssa/docs
@@ -67,9 +67,11 @@ Route::redirect('/admin/dashboard', '/ssa/dashboard');
 */
 Route::prefix('app')->group(function () {
     Route::get('/login', [AppAuthController::class, 'showLogin'])->name('app.login');
-    Route::post('/login', [AppAuthController::class, 'login'])->name('app.login.submit');
+    Route::post('/login', [AppAuthController::class, 'login'])->middleware('throttle:10,1')->name('app.login.submit');
     Route::post('/logout', [AppAuthController::class, 'logout'])->name('app.logout');
-    Route::get('/switch-role/{role}', [AppAuthController::class, 'switchRole'])->name('app.switch_role');
+    Route::get('/switch-role/{role}', [AppAuthController::class, 'switchRole'])
+        ->middleware(['auth', 'society_member'])
+        ->name('app.switch_role');
 
     // 1. Committee Member
     Route::middleware(['auth', 'society_member:committee_member'])->prefix('committee')->group(function () {

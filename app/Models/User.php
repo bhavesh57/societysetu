@@ -63,6 +63,40 @@ class User extends Authenticatable
         return trim($mobile) . '#' . strtoupper(trim($societyCode));
     }
 
+    /**
+     * Resolve a user by user_name, email, or mobile number.
+     * When $societyId is provided, prefers/scopes users belonging to that society.
+     */
+    public static function findByLoginIdentifier(string $identifier, ?int $societyId = null, ?string $societyCode = null): ?self
+    {
+        $value = trim($identifier);
+        if ($value === '') {
+            return null;
+        }
+
+        if ($societyCode !== null && $societyCode !== '') {
+            $expectedUserName = self::generateUserName($value, $societyCode);
+            $byGenerated = static::query()->where('user_name', $expectedUserName)->first();
+            if ($byGenerated) {
+                return $byGenerated;
+            }
+        }
+
+        $query = static::query()->where(function ($q) use ($value) {
+            $q->where('user_name', $value)
+                ->orWhere('email', $value)
+                ->orWhere('mobile', $value);
+        });
+
+        if ($societyId !== null) {
+            $query->whereHas('societyMembers', function ($q) use ($societyId) {
+                $q->where('society_id', $societyId)->where('status', 'active');
+            });
+        }
+
+        return $query->first();
+    }
+
     public function societyMembers(): HasMany
     {
         return $this->hasMany(SocietyMember::class);

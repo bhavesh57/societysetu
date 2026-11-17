@@ -15,15 +15,17 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'society_code' => ['required', 'string'],
-            'mobile' => ['required', 'string'],
+            'society_code' => ['nullable', 'string', 'max:60'],
+            'login' => ['required_without_all:mobile,email', 'nullable', 'string', 'max:150'],
+            'mobile' => ['required_without_all:login,email', 'nullable', 'string', 'max:150'],
+            'email' => ['required_without_all:login,mobile', 'nullable', 'string', 'max:150'],
             'password' => ['nullable', 'string'],
             'pin' => ['nullable', 'string'],
         ]);
 
-        $societyCode = strtoupper(trim($request->society_code));
-        $mobile = trim($request->mobile);
-        $password = trim($request->password ?? $request->pin ?? '');
+        $societyCode = strtoupper(trim((string) $request->input('society_code', '')));
+        $identifier = trim((string) ($request->input('login') ?? $request->input('mobile') ?? $request->input('email') ?? ''));
+        $password = trim((string) ($request->password ?? $request->pin ?? ''));
 
         if (empty($password)) {
             return response()->json([
@@ -32,30 +34,28 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $society = Society::where('society_code', $societyCode)->first();
-        if (!$society || $society->status !== 'active') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Active society not found for provided society code.',
-            ], 404);
+        $society = null;
+        if ($societyCode !== '') {
+            $society = Society::where('society_code', $societyCode)->first();
+            if (!$society || $society->status !== 'active') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Active society not found for provided society code.',
+                ], 404);
+            }
         }
 
-        $expectedUserName = User::generateUserName($mobile, $societyCode);
-        $user = User::where('user_name', $expectedUserName)
-            ->orWhere('mobile', $mobile)
-            ->first();
+        $user = User::findByLoginIdentifier($identifier, $society?->id, $society?->society_code);
 
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Mobile number is not registered for this society.',
+                'message' => 'Account not found for the provided credentials.',
             ], 404);
         }
 
         $isPasswordValid = ($user->password && Hash::check($password, $user->password)) ||
-                           ($user->pin && Hash::check($password, $user->pin)) ||
-                           ($password === '1234') ||
-                           ($password === 'password');
+                           ($user->pin && Hash::check($password, $user->pin));
 
         if (!$isPasswordValid) {
             return response()->json([
@@ -64,8 +64,24 @@ class AuthController extends Controller
             ], 401);
         }
 
-        if (empty($user->user_name)) {
-            $user->user_name = $expectedUserName;
+        if (!$society) {
+            $membership = SocietyMember::with('society')
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->whereHas('society', fn ($q) => $q->where('status', 'active'))
+                ->first();
+            $society = $membership?->society;
+        }
+
+        if (!$society) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User does not belong to an active society.',
+            ], 403);
+        }
+
+        if (empty($user->user_name) && !empty($user->mobile)) {
+            $user->user_name = User::generateUserName($user->mobile, $society->society_code);
             $user->save();
         }
 
